@@ -21,7 +21,7 @@ import {
 
 export class AudioStreamer {
   public audioQueue: Float32Array[] = [];
-  private isPlaying: boolean = false;
+  public isPlaying: boolean = false;
   private sampleRate: number = 24000;
   private bufferSize: number = 7680;
   private processingBuffer: Float32Array = new Float32Array(0);
@@ -32,8 +32,10 @@ export class AudioStreamer {
   private checkInterval: number | null = null;
   private initialBufferTime: number = 0.1; //0.1 // 100ms initial buffer
   private endOfQueueAudioSource: AudioBufferSourceNode | null = null;
+  private totalDuration: number = 0;
 
   public onComplete = () => {};
+  public onDurationUpdate = (duration: number) => {};
 
   constructor(public context: AudioContext) {
     this.gainNode = this.context.createGain();
@@ -96,6 +98,11 @@ export class AudioStreamer {
     newBuffer.set(this.processingBuffer);
     newBuffer.set(float32Array, this.processingBuffer.length);
     this.processingBuffer = newBuffer;
+
+    // Calculate duration of this chunk
+    const chunkDuration = float32Array.length / this.sampleRate;
+    this.totalDuration += chunkDuration;
+    this.onDurationUpdate(this.totalDuration);
 
     while (this.processingBuffer.length >= this.bufferSize) {
       const buffer = this.processingBuffer.slice(0, this.bufferSize);
@@ -214,6 +221,7 @@ export class AudioStreamer {
     this.audioQueue = [];
     this.processingBuffer = new Float32Array(0);
     this.scheduledTime = this.context.currentTime;
+    this.totalDuration = 0;
 
     if (this.checkInterval) {
       clearInterval(this.checkInterval);
