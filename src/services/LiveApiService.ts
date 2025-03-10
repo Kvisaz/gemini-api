@@ -5,33 +5,30 @@ import {audioContext} from "../lib/utils";
 import VolMeterWorket from "../lib/worklets/vol-meter";
 
 interface IApiArgs {
-    url: string,
-    apiKey: string
+    url: string;
+    apiKey: string;
+    config: LiveConfig;
+    onSetup?: (message: { error?: string }) => void;
 }
-
-const defaultConfig: LiveConfig = {model: "models/gemini-2.0-flash-exp"};
 
 export class LiveApiService {
     private readonly client: MultimodalLiveClient;
     private audioStreamer: AudioStreamer | undefined;
-    private config: LiveConfig = defaultConfig;
+    private isConnected = false;
     volume = 0;
     duration = 0;
-    private _connected = false;
 
-    get connected() {
-        return this._connected;
-    }
-
-    private set connected(connected: boolean) {
-        this._connected = connected;
-    }
 
     constructor(private apiArgs: IApiArgs) {
         this.client = new MultimodalLiveClient(apiArgs);
         this.setupAudioStreamer()
-            .then((audioStreamer) => this.subcribeToEvents(audioStreamer))
-            .catch(console.warn);
+            .then((audioStreamer) => this.subscribeToEvents(audioStreamer))
+            .then(() => {
+                apiArgs.onSetup?.({})
+            })
+            .catch(e => {
+                apiArgs.onSetup?.({error: e.toString()});
+            });
     }
 
     private async setupAudioStreamer() {
@@ -50,10 +47,10 @@ export class LiveApiService {
         return audioStreamer;
     }
 
-    private subcribeToEvents(audioStreamer: AudioStreamer): () => void {
+    private subscribeToEvents(audioStreamer: AudioStreamer): () => void {
         const {client} = this;
-
-        const onClose = () => this.connected = false;
+        this.audioStreamer = audioStreamer;
+        const onClose = () => this.isConnected = false;
         const stopAudioStreamer = () => audioStreamer.stop();
         const onAudio = (data: ArrayBuffer) =>
             audioStreamer.addPCM16(new Uint8Array(data));
@@ -73,11 +70,11 @@ export class LiveApiService {
         };
     }
 
-    async connect(config: LiveConfig) {
-        const {client, audioStreamer} = this;
-        await client.connect(config);
-        this.connected = true;
-        console.log('client is Connected! for config', config);
+    async connect() {
+        const {client, audioStreamer, apiArgs} = this;
+        await client.connect(apiArgs.config);
+        this.isConnected = true;
+        console.log('client is Connected! for config', apiArgs.config);
         if (audioStreamer == null) {
             console.warn('audioStreamer==null');
             return;
@@ -87,9 +84,13 @@ export class LiveApiService {
 
     disconnect() {
         const {client, audioStreamer} = this;
-        this.connected = false;
+        this.isConnected = false;
         audioStreamer?.stop();
         client.disconnect();
     }
 
+    switchConnection() {
+        if (this.isConnected) this.disconnect();
+        else this.connect().catch(console.warn);
+    }
 }
