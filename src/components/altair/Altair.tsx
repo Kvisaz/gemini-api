@@ -18,6 +18,7 @@ import { useEffect, useRef, useState, memo } from "react";
 import vegaEmbed from "vega-embed";
 import { useLiveAPIContext } from "../../contexts/LiveAPIContext";
 import { ToolCall } from "../../multimodal-live-types";
+import {API_CONFIG} from '../../constants';
 
 const declaration: FunctionDeclaration = {
   name: "render_altair",
@@ -40,27 +41,7 @@ function AltairComponent() {
   const { client, setConfig } = useLiveAPIContext();
 
   useEffect(() => {
-    setConfig({
-      model: "models/gemini-2.0-flash-exp",
-      generationConfig: {
-        responseModalities: "audio",
-        speechConfig: {
-          voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } },
-        },
-      },
-      systemInstruction: {
-        parts: [
-          {
-            text: 'You are my helpful assistant. Any time I ask you for a graph call the "render_altair" function I have provided you. Dont ask for additional information just make your best judgement.',
-          },
-        ],
-      },
-      tools: [
-        // there is a free-tier quota for search
-        { googleSearch: {} },
-        { functionDeclarations: [declaration] },
-      ],
-    });
+    setConfig(API_CONFIG);
   }, [setConfig]);
 
   useEffect(() => {

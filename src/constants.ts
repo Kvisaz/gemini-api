@@ -1,4 +1,4 @@
-import { functionDeclarations } from './functionDeclarations';
+import {functionDeclarations} from './functionDeclarations';
 import {LiveConfig} from './multimodal-live-types';
 
 export const API_KEY = process.env.REACT_APP_GEMINI_API_KEY;
@@ -7,14 +7,14 @@ if (typeof API_KEY !== "string") {
 }
 
 export const API_HOST = "generativelanguage.googleapis.com";
-export const API_URI = `wss://${API_HOST}/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent`;
+export const API_WEBSOCKET_URI = `wss://${API_HOST}/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent`;
 
 export const API_CONFIG: LiveConfig = {
     model: "models/gemini-2.0-flash-exp",
     generationConfig: {
         responseModalities: "audio",
         speechConfig: {
-            voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } },
+            voiceConfig: {prebuiltVoiceConfig: {voiceName: "Aoede"}},
         },
     },
     systemInstruction: {
@@ -25,7 +25,7 @@ export const API_CONFIG: LiveConfig = {
         ],
     },
     tools: [
-        { googleSearch: {} },
-        { functionDeclarations },
+        {googleSearch: {}},
+        {functionDeclarations},
     ],
 }
