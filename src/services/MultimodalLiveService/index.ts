@@ -1,2 +1,2 @@
-export * from './LiveApiService';
 export * from './MultimodalLiveService';
+export * from './interfaces';
